@@ -1,0 +1,20 @@
+[package]
+name = "tabconf24_bdk_workshop"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1.0" }
+axum = { version = "0.7" , features = ["form", "macros"] }
+bdk_esplora = { version = "0.19.0", features = ["async-https"] }
+bdk_sqlx = { path = "../bdk-sqlx" }
+bdk_wallet = { version = "1.0.0-beta.5", features = ["all-keys"] }
+maud = { version = "*", features = ["axum"] }
+serde = { version = "1.0", features = ["derive"] }
+sqlx = { version = "0.8.1", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "postgres", "sqlite", "json", "chrono", "uuid", "sqlx-macros", "migrate"] }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1.0.64"
