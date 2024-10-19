@@ -8,11 +8,11 @@
   * can build unique wallet and non-wallet apps directly on `bdk_chain`
   * improved `no-std` support
   * built on latest `rust-bitcoin` (0.32) and `rust-miniscript` (12.0)
-  
+
 * Decoupled data syncing and storage crates from `bdk_wallet` and `bdk_chain`
   * can sync and read/write wallet and chain data with async or blocking methods
   * sync and store crates only need to implement simple traits
-  * able use async or blocking I/O 
+  * able use async or blocking I/O
 
 * Improved blockchain sync clients
   * better electrum and esplora client performance and error handling
@@ -26,7 +26,7 @@
 
 ## Purpose of Workshop
 
-The purpose of this workshop is to demonstrate how to build a simple, pure Rust [bdk-wallet 1.0](https://github.com/bitcoindevkit/bdk/releases) based app using the [Axum](https://github.com/tokio-rs/axum) web framework, the [rust-esplora-esplora](https://github.com/bitcoindevkit/rust-esplora-client) blockchain client, and a SQLite embedded database. 
+The purpose of this workshop is to demonstrate how to build a simple, pure Rust [bdk-wallet 1.0](https://github.com/bitcoindevkit/bdk/releases) based app using the [Axum](https://github.com/tokio-rs/axum) web framework, the [rust-esplora-client](https://github.com/bitcoindevkit/rust-esplora-client) blockchain client, and a SQLite embedded database.
 
 ## Quick Start
 
@@ -52,7 +52,7 @@ The purpose of this workshop is to demonstrate how to build a simple, pure Rust 
    ```aiignore
    export WALLET_DB_URL="sqlite://YOUR_CUSTOM_NAME.sqlite?mode=rwc`
    ```
-   
+
 ## Code Walkthrough
 
 
