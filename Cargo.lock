@@ -377,6 +377,7 @@ dependencies = [
 [[package]]
 name = "bdk_sqlx"
 version = "0.1.0"
+source = "git+https://github.com/notmandatory/bdk-sqlx?branch=add_sqlite_module#7388cfecbc096e6c81cf49386ea6f32032475544"
 dependencies = [
  "bdk_wallet",
  "serde",
