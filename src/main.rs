@@ -187,15 +187,8 @@ impl<'a> TxDetails {
     fn new(wallet_tx: WalletTx<'a>, wallet: &PersistedWallet<Store<Sqlite>>) -> Self {
         let txid = wallet_tx.tx_node.txid;
         let tx = wallet_tx.tx_node.tx;
-        let (mut sent, mut received) = wallet.sent_and_received(&tx);
+        let (sent, received) = wallet.sent_and_received(&tx);
         let fee = wallet.calculate_fee(&tx).unwrap();
-        if sent > received {
-            sent = sent - received - fee;
-            received = Amount::ZERO;
-        } else {
-            sent = Amount::ZERO;
-            received -= sent;
-        }
         let fee_rate = wallet.calculate_fee_rate(&tx).unwrap();
         let chain_position: ChainPosition<ConfirmationBlockTime> =
             wallet_tx.chain_position.cloned();
