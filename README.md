@@ -20,15 +20,15 @@
   * experimental compact block filter client based on `kyoto`
 
 * Improved wallet and chain data stores
-  * async PostgreSQL and SQLite `sqlx` based stores
   * blocking SQLite store based on `rusqlite`
+  * experimental async PostgreSQL and SQLite `sqlx` based stores
   * experimental blocking flat file based store
 
 ## Purpose of Workshop
 
 The purpose of this workshop is to demonstrate how to build a simple, pure Rust [bdk-wallet 1.0](https://github.com/bitcoindevkit/bdk/releases) based app using the [Axum](https://github.com/tokio-rs/axum) web framework, the [rust-esplora-client](https://github.com/bitcoindevkit/rust-esplora-client) blockchain client, and a SQLite embedded database.
 
-## Quick Start
+## Quick Start ⚡
 
 ### Setup
 
@@ -37,7 +37,7 @@ The purpose of this workshop is to demonstrate how to build a simple, pure Rust 
 3. [SQLite](https://medium.com/@techwithjulles/part-5-how-to-install-sqlite-on-your-machine-windows-linux-and-mac-simple-version-f05b7963b6cd)
 4. Editor (eg. [RustRover](https://www.jetbrains.com/rust/), *Vim, [VSCode](https://code.visualstudio.com/docs/languages/rust), [Zed](https://zed.dev/), etc.)
 
-### Build/Run
+### Build/Run 🏗️
 
 1. Clone this repo
    ```
@@ -53,11 +53,48 @@ The purpose of this workshop is to demonstrate how to build a simple, pure Rust 
    export WALLET_DB_URL="sqlite://YOUR_CUSTOM_NAME.sqlite?mode=rwc`
    ```
 
-## Code Walkthrough
+## Code Walkthrough 🔎
 
+1. Cargo dependencies
+2. Create esplora client
+3. Create database connection pools
+4. Create key store
+5. Load or create and store secret key
+6. Create BIP86 taproot descriptors
+7. Load or create and store a new wallet
+8. Create web app state
+9. Configure web server routes
+10. Start the web server
 
+## Chose your own adventure 🏰
 
-## BDK Links
+Imagine turning this project into an easy to install (single binary) testnet faucet. What features would you like to add?
+
+### Small
+
+- amounts in SATs or BTC
+- amounts also in USD
+- list utxos
+- make it prettier (ie. [htmx](https://htmx.org/) and [tailwinds](https://tailwindcss.com/docs/installation))
+- only allow spending if balance available
+- custom genesis (eg. testnet4)
+- sync with electrum or esplora
+- store data in postgreSQL
+- simple captcha to spend
+
+### Medium
+
+- manual utxo selection
+- sync with CBF [bdk-kyoto](https://github.com/bitcoindevkit/bdk-kyoto)
+- some sort of PoW captcha to spend
+
+### Large
+
+- send/receive payjoins [rust-payjoin](https://github.com/payjoin/rust-payjoin)
+- store data in [redb](https://github.com/cberner/redb)
+- nostr bot
+
+## BDK Project Links
 
 * [Home](https://bitcoindevkit.org)
 * [Repo](https://github.com/bitcoindevkit/bdk)

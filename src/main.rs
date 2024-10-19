@@ -1,40 +1,32 @@
-mod db;
 mod error;
+mod key_store;
 mod template;
 
-use crate::db::{load_secret_key_mnemonic, store_secret_key_mnemonic};
 use crate::error::AppError;
+use crate::key_store::KeyStore;
 use crate::template::home_page;
-use axum::extract::State;
 use axum::response::{IntoResponse, Redirect};
-use axum::{routing::get, Form, Router};
-use bdk_esplora::esplora_client::AsyncClient;
-use bdk_esplora::{esplora_client, EsploraAsyncExt};
+use axum::{extract::State, routing::get, Form, Router};
+use bdk_esplora::{esplora_client, esplora_client::AsyncClient, EsploraAsyncExt};
 use bdk_sqlx::Store;
-use bdk_wallet::bip39::{Language, Mnemonic};
-use bdk_wallet::bitcoin::script::PushBytesBuf;
-use bdk_wallet::bitcoin::{Address, Amount, FeeRate, Txid};
+use bdk_wallet::bitcoin::{script::PushBytesBuf, Address, Amount, FeeRate, Network, Txid};
 use bdk_wallet::chain::{ChainPosition, ConfirmationBlockTime};
 use bdk_wallet::descriptor::IntoWalletDescriptor;
-use bdk_wallet::keys::bip39::WordCount::{self, Words12};
 use bdk_wallet::template::Bip86;
 use bdk_wallet::KeychainKind::{External, Internal};
-use bdk_wallet::{bitcoin::Network, PersistedWallet, SignOptions, Wallet, WalletTx};
+use bdk_wallet::{PersistedWallet, SignOptions, Wallet, WalletTx};
 use serde::Deserialize;
-use sqlx::sqlx_macros::migrate;
-use sqlx::{Sqlite, SqlitePool, Transaction as DbTransaction};
-use std::str::FromStr;
-use std::sync::Arc;
-use tokio::net::TcpListener;
-use tokio::sync::RwLock;
+use sqlx::{Sqlite, SqlitePool};
+use std::{str::FromStr, sync::Arc};
+use tokio::{net::TcpListener, sync::RwLock};
 use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 const ESPLORA_URL: &str = "https://mutinynet.com/api";
 const PARALLEL_REQUESTS: usize = 5;
-const WORD_COUNT: WordCount = Words12;
 const NETWORK: Network = Network::Signet;
-const DEFAULT_DB_URL: &str = "sqlite://bdk_wallet.sqlite?mode=rwc";
+const DEFAULT_KEY_DB_URL: &str = "sqlite://bdk_key.sqlite?mode=rwc";
+const DEFAULT_WALLET_DB_URL: &str = "sqlite://bdk_wallet.sqlite?mode=rwc";
 const WALLET_NAME: &str = "primary";
 
 struct AppState {
@@ -57,28 +49,26 @@ async fn main() -> Result<(), AppError> {
     // create esplora client
     let client = esplora_client::Builder::new(ESPLORA_URL).build_async()?;
 
-    // create database connection pool, URL from env or use default DB URL
-    let database_url = std::env::var("WALLET_DB_URL").unwrap_or(DEFAULT_DB_URL.to_string());
-    debug!("database_url: {:?}", &database_url);
+    // create database connection pools, URL from env or use default DB URL
+    let key_db_url = std::env::var("KEY_DB_URL").unwrap_or(DEFAULT_KEY_DB_URL.to_string());
+    debug!("key_db_url: {:?}", &key_db_url);
+    let wallet_db_url = std::env::var("WALLET_DB_URL").unwrap_or(DEFAULT_WALLET_DB_URL.to_string());
+    debug!("wallet_db_url: {:?}", &wallet_db_url);
 
-    // run database schema migrations
-    let pool = SqlitePool::connect(database_url.as_str()).await?;
-    migrate!("./migrations").run(&pool).await?;
-
-    // create wallet database store
-    let mut store: Store<Sqlite> =
-        Store::<Sqlite>::new(pool.clone(), Some(WALLET_NAME.to_string()), false).await?;
+    // create key database connection pool and run key database schema migrations
+    let key_pool = SqlitePool::connect(key_db_url.as_str()).await?;
+    let key_store = KeyStore::new(key_pool).await?;
 
     // load or create and store new BIP-39 secret key mnemonic
-    let mut tx: DbTransaction<Sqlite> = pool.begin().await?;
-    let loaded_key = load_secret_key_mnemonic(&mut tx).await?;
-    let mnemonic = match loaded_key {
-        Some(mnemonic) => mnemonic,
-        None => store_secret_key_mnemonic(&mut tx).await?,
-    };
-    let mnemonic = Mnemonic::parse_in(Language::English, mnemonic)?;
-    tx.commit().await?;
+    let mnemonic = key_store
+        .load_or_generate_key(WALLET_NAME.to_string())
+        .await?;
     debug!("mnemonic: {}", &mnemonic);
+
+    // create wallet database connection pool and wallet database store
+    let wallet_pool = SqlitePool::connect(wallet_db_url.as_str()).await?;
+    let mut wallet_store: Store<Sqlite> =
+        Store::<Sqlite>::new(wallet_pool.clone(), WALLET_NAME.to_string(), true).await?;
 
     // create BIP86 taproot descriptors
     let (external_descriptor, external_keymap) =
@@ -100,7 +90,7 @@ async fn main() -> Result<(), AppError> {
         )
         .extract_keys()
         .check_network(NETWORK)
-        .load_wallet_async(&mut store)
+        .load_wallet_async(&mut wallet_store)
         .await?;
     let wallet = match loaded_wallet {
         Some(wallet) => wallet,
@@ -110,7 +100,7 @@ async fn main() -> Result<(), AppError> {
                 (internal_descriptor, internal_keymap),
             )
             .network(NETWORK)
-            .create_wallet_async(&mut store)
+            .create_wallet_async(&mut wallet_store)
             .await?
         }
     };
@@ -118,7 +108,7 @@ async fn main() -> Result<(), AppError> {
     // web app state
     let state = Arc::new(AppState {
         wallet: RwLock::new(wallet),
-        store: RwLock::new(store),
+        store: RwLock::new(wallet_store),
         client,
     });
 
