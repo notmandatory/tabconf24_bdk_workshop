@@ -86,7 +86,7 @@ Imagine turning this project into an easy to install (single binary) testnet fau
 
 - manual utxo selection
 - sync with CBF [bdk-kyoto](https://github.com/bitcoindevkit/bdk-kyoto)
-- some sort of PoW captcha to spend
+- PoW captcha to spend (see [alpenlabs](https://github.com/alpenlabs/faucet-api))
 
 ### Large
 
